@@ -3,89 +3,115 @@
 
 import numpy as np, matplotlib.pyplot as plt
 from scipy.interpolate import CubicSpline
+from obstacle import Obstacle
 
 class Environment(object):
 
-    def __init__(self, lx, ly, r):
+    def __init__(self, lx, ly, d):
 
         # farm dimensions
         self.lx = float(lx)
         self.ly = float(ly)
 
         # safe radius
-        self.r = float(r)
+        self.d = float(d)
 
         # random origin and target
-        self.p0 = np.array([0, np.random.uniform(0 + self.r, self.ly - self.r)], float)
-        self.pf = np.array([self.lx, np.random.uniform(0 + self.r, self.ly - self.r)] ,float)
-
-    def gen_paths(self, nx=4, npaths=2):
-
-        # horizontal boundaries
-        x = np.linspace(0, self.lx, nx+3)[1:-1]
-
-        paths = list()
-        for i in range(npaths):
-            path = [self.p0]
-            for j in range(nx)[1:]:
-                path.append([
-                    np.random.uniform(x[i-1], x[i]),
-                    np.random.uniform(self.r, self.ly - self.r)
-                ])
-            paths.append(np.vstack((path, self.pf)))
-
-        fig, ax = plt.subplots(1)
-        [ax.plot(p[:,0], p[:,1]) for p in paths]
-        plt.show()
-
-
-
-        '''
-        # first path
-        path0 = np.vstack((
-            self.p0,
-            [np.random.uniform(self.lx/4, 2*self.lx/4)]
-        ))
-
-
-
-        wps = np.hstack((
-            np.random.uniform(self.r, self.lx - self.r, size=(2,1)),
-            np.random.uniform(self.r, self.ly - self.r, size=(2,1))
-        ))
+        y0 = np.random.uniform(0 + self.d, self.ly - self.d)
+        if y0 <= self.ly/2:
+            y1 = (y0 + self.ly)/2
+        elif y0 > self.ly/2:
+            y1 = y0/2
+        self.p0 = np.array([0, y0], float)
+        self.pf = np.array([self.lx, y1] ,float)
 
         # paths
-        paths = [np.vstack((self.p0, wp, self.pf)) for wp in wps]
+        self.path0, self.path1 = self.gen_paths()
 
-        print(paths)
+        # generate obstacles
+        self.gen_obs()
 
-        # cubic splines
-        y = [CubicSpline(path[:, 0], path[:, 1], bc_type='clamped') for path in paths]
+    def gen_paths(self):
 
-        # derrivatives
-        dy = [cs.derivative() for cs in y]
+        # horizontal point
+        x = self.lx/2
 
-        # x points
-        npts = 100
-        x, dx = np.linspace(0, self.lx, npts, retstep=True)
+        # random y
+        y = np.random.uniform(0 + self.d, self.ly - self.d)
 
-        # normals
-        norms = [np.vstack((-der(x), np.full(npts, dx))).T for der in dy]
-        norms = [norm/np.linalg.norm(norm, axis=1)[:, None] for norm in norms]
+        # first path
+        path0 = np.vstack((self.p0, [x, y], self.pf))
 
-        # positions
-        pos = [np.vstack((x, cs(x))).T for cs in y]
+        # another y
+        if y <= self.ly/2:
+            y = (y + self.ly)/2
+        elif y > self.ly/2:
+            y = y/2
 
-        # pertubations
-        pertn = [norm*self.r*1.4 for norm in norms]
-        perts = [norm*-self.r*1.4 for norm in norms]
+        # second path
+        path1 = np.vstack((self.p0, [x, y], self.pf))
 
-        # borders
-        bordn = [p + pn for p,pn in zip(pos, pertn)]
-        bords = [p + ps for p,ps in zip(pos, perts)]
+        # interpolate
+        path0 = CubicSpline(path0[:,0], path0[:,1], bc_type='clamped')
+        path1 = CubicSpline(path1[:,0], path1[:,1], bc_type='clamped')
 
-        return pos, norms, bordn, bords
-        '''
+        return path0, path1
+
+    def gen_obs(self):
+
+        # obstacle diameter bounds
+        dlb, dub = self.d/2, self.d*4
+
+        # define obstacle area
+        xl, xu = self.lx/10 + dub, 9*self.lx/10 - dub
+        yl, yu = 0, self.ly
+
+        # obstacle list
+        self.obs = list()
+
+        # number of obstacles
+        n = 40
+        # succesfull obstacles
+        i = 0
+        # unsucessfull tries
+        j = 0
+        # first obstacle
+        first = True
+
+        while j < 1000:
+
+            # random position
+            x = np.random.uniform(xl, xu)
+            y = np.random.uniform(yl, yu)
+
+            # diameter bounds
+            dlb, dub = self.d, self.d*3
+
+            # proposed obstacle
+            pob = Obstacle(x, y, dlb, dub, 10)
+
+            # if first
+            if first:
+                self.obs.append(pob)
+                first = False
+
+            else:
+
+                # check conflictions with other obstacles
+                if any([np.linalg.norm(pob.p - sob.p) <= pob.rub + sob.rub + self.d for sob in self.obs]):
+                    j += 1
+                    continue
+                else:
+                    self.obs.append(pob)
+                    i += 1
+                    j = 0
+
+
+
+
+
+
+
 
     def plot(self, ax=None):
 
@@ -107,22 +133,32 @@ class Environment(object):
         ax.plot(*self.p0, 'kx', label='Origin')
         ax.plot(*self.pf, 'kx')
 
+        # plot paths
+        #x = np.linspace(0, self.lx, 100*self.lx)
+        #ax.plot(x, self.path0(x))
+        #ax.plot(x, self.path1(x))
+
+        for obs in self.obs:
+            obs.plot(ax)
+
+
 
 
 if __name__ == '__main__':
 
     # instantiate environment
     env = Environment(50, 30, 1)
+    env.gen_obs()
 
-    # plot
-    env.gen_paths()
-
-    #fig, ax = plt.subplots(1)
-    #env.plot(ax)
+    fig, ax = plt.subplots(1)
+    env.plot(ax)
 
     #[ax.plot(p[:,0], p[:,1]) for p in pos]
     #[ax.plot(pn[:,0], pn[:,1], 'k--') for pn in bordn]
     #[ax.plot(ps[:,0], ps[:,1], 'k--') for ps in bords]
     #[ax.quiver(p[:, 0], p[:, 1], norm[:,0], norm[:,1], scale=None) for p,norm in zip(pos, norms)]
 
-    #plt.show()
+    plt.show()
+
+    for ob in env.obs:
+        print(ob.p)

@@ -85,10 +85,10 @@ class Environment(object):
             y = np.random.uniform(yl, yu)
 
             # diameter bounds
-            dlb, dub = self.d, self.d*3
+            dlb, dub = self.d, self.d*2
 
             # proposed obstacle
-            pob = Obstacle(x, y, dlb, dub, 10)
+            pob = Obstacle(x, y, dlb, dub, 8)
 
             # if first
             if first:
@@ -101,16 +101,26 @@ class Environment(object):
                 if any([np.linalg.norm(pob.p - sob.p) <= pob.rub + sob.rub + self.d for sob in self.obs]):
                     j += 1
                     continue
+
+                # check if within boundaries
+                elif any([any([vert[0] < 0, vert[0] > self.lx, vert[1] < 0, vert[1] > self.ly]) for vert in pob.verts]):
+                    j += 1
+                    continue
+
                 else:
                     self.obs.append(pob)
                     i += 1
                     j = 0
 
+    def safe(self, p):
 
-
-
-
-
+        # check if insider obstacle
+        for ob in self.obs:
+            if ob.inside(p):
+                return False
+            else:
+                continue
+        return True
 
 
     def plot(self, ax=None):
@@ -153,12 +163,21 @@ if __name__ == '__main__':
     fig, ax = plt.subplots(1)
     env.plot(ax)
 
+    # random points
+    i = 0
+    while i < 1000:
+        x = np.random.uniform(0, env.lx)
+        y = np.random.uniform(0, env.ly)
+        p = np.array([x, y])
+        if env.safe(p):
+            ax.plot(*p, 'k.')
+            i += 1
+        else:
+            continue
+
     #[ax.plot(p[:,0], p[:,1]) for p in pos]
     #[ax.plot(pn[:,0], pn[:,1], 'k--') for pn in bordn]
     #[ax.plot(ps[:,0], ps[:,1], 'k--') for ps in bords]
     #[ax.quiver(p[:, 0], p[:, 1], norm[:,0], norm[:,1], scale=None) for p,norm in zip(pos, norms)]
 
     plt.show()
-
-    for ob in env.obs:
-        print(ob.p)

@@ -19,6 +19,8 @@ class Obstacle(object):
         # generate verticies
         self.gen_verts()
 
+        self.color = 'gray'
+
     def gen_verts(self):
 
         # angles
@@ -29,18 +31,46 @@ class Obstacle(object):
 
         # vertices
         self.verts = np.vstack(([
+            # random radius
             np.random.uniform(self.rlb, self.rub)*
+            # x and y from theta
             np.array([np.cos(theta), np.sin(theta)]) +
+            # position wrt origin
             self.p
             for theta in thetas
         ]))
+
+    def inside(self, p):
+
+        # extract point
+        x, y = p
+
+        # first vertex
+        x0, y0 = self.verts[0, 0], self.verts[0, 1]
+
+        inside = False
+        for i in range(self.n + 1):
+            x1, y1 = self.verts[i%self.n, 0], self.verts[i%self.n, 1]
+            if y > min(y0, y1):
+                if y <= max(y0, y1):
+                    if x <= max(x0, x1):
+                        if y0 != y1:
+                            xints = (y-y0)*(x1-x0)/(y1-y0)+x0
+                        if x0 == x1 or x <= xints:
+                            inside = not inside
+            x0, y0 = x1, y1
+
+        return inside
+
 
     def plot(self, ax=None):
 
         if ax is None:
             fig, ax = plt.subplots(1)
 
-        ax.fill(self.verts[:,0], self.verts[:,1], "gray", ec='k')
+        ax.fill(self.verts[:,0], self.verts[:,1], self.color, alpha=0.6, ec='k')
+
+        return ax
 
 
 if __name__ == '__main__':
@@ -48,6 +78,21 @@ if __name__ == '__main__':
     # instantiate obstacle
     obs = Obstacle(0, 0, 10, 20, 10)
 
-    # generate verticies
-    obs.gen_verts()
-    obs.plot()
+    # plot obstacle
+    ax = obs.plot()
+
+    # random points
+    for i in range(1000):
+        x = np.random.uniform(-10, 10)
+        y = np.random.uniform(-10, 10)
+        p = np.array([x, y])
+        if obs.inside(p):
+            ax.plot(*p, 'rx')
+        else:
+            ax.plot(*p, 'gx')
+
+    ax.set_aspect('equal')
+
+    plt.show()
+
+    print(obs.inside(p))

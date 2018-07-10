@@ -19,15 +19,10 @@ class Obstacle(object):
         # generate verticies
         self.gen_verts()
 
-        self.color = 'gray'
-
     def gen_verts(self):
 
         # angles
-        thetas = np.linspace(0, 2*np.pi, self.n)
-
-        # random pertubation
-        thetas += np.random.uniform(0, 2*np.pi)
+        thetas = np.linspace(0, 2*np.pi, self.n) + np.random.uniform(0, 2*np.pi)
 
         # vertices
         self.verts = np.vstack(([
@@ -40,7 +35,7 @@ class Obstacle(object):
             for theta in thetas
         ]))
 
-    def inside(self, p):
+    def point_inside(self, p):
 
         # extract point
         x, y = p
@@ -62,13 +57,53 @@ class Obstacle(object):
 
         return inside
 
+    def line_intersect(self, p):
+
+        # line in question
+        a = p[0, :]
+        b = p[1, :]
+
+        # first check whether verticies are inside
+        if any([self.point_inside(a), self.point_inside(b)]):
+            return True
+
+        # vector
+        ab = b - a
+
+        # check each edge
+        for i in range(self.n - 1):
+
+            # vertex line
+            c = self.verts[i, :]
+            d = self.verts[i+1, :]
+
+            # vectors
+            cd = d - c
+            bc = c - b
+            bd = d - b
+            da = a - d
+            db = b - d
+
+            # proper intersction
+            if np.cross(ab, bc)*np.cross(ab, bd) < 0 and np.cross(cd, da)*np.cross(cd, db) < 0:
+                return True
+        return False
+
+    def lines_intersect(self, p):
+
+        for i in range(len(p) - 1):
+
+            line = p[i:i+2, :]
+            if self.line_intersect(line):
+                return True
+        return False
 
     def plot(self, ax=None):
 
         if ax is None:
             fig, ax = plt.subplots(1)
 
-        ax.fill(self.verts[:,0], self.verts[:,1], self.color, alpha=0.6, ec='k')
+        ax.fill(self.verts[:,0], self.verts[:,1], 'gray', alpha=0.6, ec='k')
 
         return ax
 
@@ -81,18 +116,13 @@ if __name__ == '__main__':
     # plot obstacle
     ax = obs.plot()
 
-    # random points
-    for i in range(1000):
-        x = np.random.uniform(-10, 10)
-        y = np.random.uniform(-10, 10)
-        p = np.array([x, y])
-        if obs.inside(p):
-            ax.plot(*p, 'rx')
+    # line
+    for i in range(4000):
+        line = np.random.uniform(-10, 10, (2,2))
+        if obs.lines_intersect(line):
+            ax.plot(line[:,0], line[:,1], 'r.-', alpha=0.1)
         else:
-            ax.plot(*p, 'gx')
+            ax.plot(line[:,0], line[:,1], 'g.-')
 
     ax.set_aspect('equal')
-
     plt.show()
-
-    print(obs.inside(p))

@@ -99,12 +99,15 @@ class Obstacle(object):
                 return True
         return False
 
-    def plot(self, ax=None):
+    def plot(self, ax=None, label=False):
 
         if ax is None:
             fig, ax = plt.subplots(1)
 
-        ax.fill(self.verts[:,0], self.verts[:,1], 'gray', alpha=0.6, ec='k')
+        if label:
+            ax.fill(self.verts[:,0], self.verts[:,1], 'gray', alpha=0.6, ec='k', label='Obstacle')
+        else:
+            ax.fill(self.verts[:,0], self.verts[:,1], 'gray', alpha=0.6, ec='k')
 
         return ax
 
@@ -112,7 +115,7 @@ class Obstacle(object):
 if __name__ == '__main__':
 
     # instantiate obstacle
-    obs = Obstacle(0, 0, 10, 20, 10)
+    obs = Obstacle(0, 0, 10, 20, 20)
 
     # plot obstacle
     ax = obs.plot()

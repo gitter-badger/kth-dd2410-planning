@@ -12,10 +12,10 @@ class Mission(object):
     def __init__(self, dyn=Dynamics(1), env=Environment(50, 30, 1)):
 
         # dynamics
-        self.dynamics = dyn
+        self._dynamics = dyn
 
         # environment
-        self.environment = env
+        self._environment = env
 
         # reset mission
         self.reset()
@@ -33,7 +33,7 @@ class Mission(object):
         self.state = np.hstack((self.environment.p0, np.zeros(self.dynamics.sdim - 2)))
 
         # reset integrator
-        self.integrator = ODE(self._eom, 0, self.state, 10000, jac=None)
+        self.integrator = ODE(self._eom, 0, self.state, 10000, jac=self._jac)
 
     def _eom(self, t, state):
         return self.dynamics.eom_state(state, self.control)

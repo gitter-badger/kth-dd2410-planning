@@ -5,6 +5,11 @@ import numpy as np
 
 class Dynamics(object):
 
+    '''
+    Dubin's car model with constant speed, where the control parameter,
+    u ∈ [-1, 1], determines the steering angle.
+    '''
+
     def __init__(self, length):
 
         # car length [m]
@@ -26,7 +31,7 @@ class Dynamics(object):
         return np.array([
             np.cos(theta),
             np.sin(theta),
-            -np.tan(np.pi*u/2)/self.l
+            np.tan(np.pi*u/2)/self.l
         ], float)
 
     def eom_jac(self, state, control):
@@ -44,7 +49,14 @@ class Dynamics(object):
             [0, 0,              0]
         ], float)
 
-class Dynamics_2(object):
+class Dynamics_2nd(object):
+
+    '''
+    Dubin's car model with constant speed, where the control parameter,
+    u ∈ [-1, 1], determines the acceleration of the steering angle.
+    This enforces smoothness in the steering angle.
+    Functions for Pontryagin's maximum principle are also included.
+    '''
 
     def __init__(self, length, alpha=0):
 

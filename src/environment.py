@@ -2,9 +2,7 @@
 # christopher.iliffe.sprague@gmail.com
 
 import numpy as np, matplotlib.pyplot as plt
-from scipy.interpolate import CubicSpline
 from obstacle import Obstacle
-from scipy.spatial import Voronoi, voronoi_plot_2d
 
 class Environment(object):
 
@@ -29,13 +27,10 @@ class Environment(object):
         # generate obstacles
         self.gen_obs()
 
-        # generate voronoi graph
-        self.gen_voronoi()
-
     def gen_obs(self):
 
         # obstacle diameter bounds
-        dlb, dub = self.d/2, self.d*4
+        dlb, dub = self.d, self.d*4
 
         # define obstacle area
         xl, xu = self.lx/10 + dub, 9*self.lx/10 - dub
@@ -44,26 +39,23 @@ class Environment(object):
         # obstacle list
         self.obs = list()
 
-        # number of obstacles
-        n = 40
-        # succesfull obstacles
-        i = 0
         # unsucessfull tries
         j = 0
         # first obstacle
         first = True
+        # diameter bounds
+        dlb, dub = self.d*2, self.d*6
+        # number of vertices per obstacle
+        n = 10
 
-        while j < 1000:
+        while j < 10000:
 
             # random position
             x = np.random.uniform(xl, xu)
             y = np.random.uniform(yl, yu)
 
-            # diameter bounds
-            dlb, dub = self.d*2, self.d*6
-
             # proposed obstacle
-            pob = Obstacle(x, y, dlb, dub, 8)
+            pob = Obstacle(x, y, dlb, dub, n)
 
             # if first
             if first:
@@ -75,16 +67,11 @@ class Environment(object):
                 # check conflictions with other obstacles
                 if any([np.linalg.norm(pob.p - sob.p) <= pob.rub + sob.rub + self.d for sob in self.obs]):
                     j += 1
-                    continue
-
                 # check if within boundaries
-                elif any([any([vert[0] < 0, vert[0] > self.lx, vert[1] < 0, vert[1] > self.ly]) for vert in pob.verts]):
+                elif any(pob.verts[:,0] < 0) or any(pob.verts[:,0] > self.lx) or any(pob.verts[:,1] < 0) or any(pob.verts[:,1] > self.ly):
                     j += 1
-                    continue
-
                 else:
                     self.obs.append(pob)
-                    i += 1
                     j = 0
 
     def safe(self, pts):
@@ -105,30 +92,17 @@ class Environment(object):
             elif pts.ndim == 2:
                 if ob.lines_intersect(pts):
                     return False
-                elif any(pts[0,:] < 0) or any(pts[0,:] > self.lx) or any(pts[1,:] < 0) or any(pts[1,:] > self.ly):
+                elif any(pts[:,0] < 0) or any(pts[:,0] > self.lx) or any(pts[:,1] < 0) or any(pts[:,1] > self.ly):
                     return False
                 else:
                     continue
 
         return True
 
-    def gen_voronoi(self):
-
-        verts = np.vstack(([ob.verts for ob in self.obs]))
-        self.voronoi = Voronoi(verts)
-
-
-
     def plot(self, ax=None, voronoi=False):
 
         if ax is None:
             fig, ax = plt.subplots(1)
-
-        # plot voronoi graph
-        if voronoi:
-            voronoi_plot_2d(self.voronoi, ax=ax)
-            ax.set_xlim(0, self.lx)
-            ax.set_ylim(0, self.ly)
 
         # plot walls
         wall = np.array([
@@ -138,59 +112,31 @@ class Environment(object):
             [self.lx, 0],
             [0, 0]
         ])
-        ax.plot(wall[:, 0], wall[:, 1], 'k-', label='Wall')
+        ax.plot(wall[:, 0], wall[:, 1], 'k-', label='Boundaries')
         ax.set_aspect('equal')
 
         # plot origin and target
-        ax.plot(*self.p0, 'kx', label='Origin')
-        ax.plot(*self.pf, 'kx')
+        ax.plot(*self.p0, 'ks', label='Origin')
+        ax.plot(*self.pf, 'kx', label='Target')
 
         # plot obstacles
-        for obs in self.obs:
-            obs.plot(ax)
+        for i in range(len(self.obs)):
+            if i == 0:
+                self.obs[i].plot(ax=ax, label=True)
+            else:
+                self.obs[i].plot(ax=ax)
 
         ax.set_xlabel('x [m]')
         ax.set_ylabel('y [m]')
+        ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.15), ncol=4, fancybox=True)
 
-
-
-
-
-
-
+        try:
+            return fig, ax
+        except:
+            pass
 
 if __name__ == '__main__':
 
-    # instantiate environment
     env = Environment(50, 30, 1)
-    #env.gen_obs()
-
-    fig, ax = plt.subplots(1)
-    env.plot(ax, voronoi=True)
-
-
-    # random points
-    '''
-    i = 0
-    while i < 1:
-        x = np.random.uniform(0, env.lx, 3)
-        y = np.random.uniform(0, env.ly, 3)
-        p = np.vstack((x, y)).T
-        p = np.vstack((env.p0, p, env.pf))
-        #p = np.array([x, y])
-        if env.safe(p):
-            ax.plot(p[:,0], p[:,1], 'k.-')
-            i += 1
-            print(p)
-        else:
-            ax.plot(x, y, 'k.-', alpha=0.1)
-            continue
-
-    #[ax.plot(p[:,0], p[:,1]) for p in pos]
-    #[ax.plot(pn[:,0], pn[:,1], 'k--') for pn in bordn]
-    #[ax.plot(ps[:,0], ps[:,1], 'k--') for ps in bords]
-    #[ax.quiver(p[:, 0], p[:, 1], norm[:,0], norm[:,1], scale=None) for p,norm in zip(pos, norms)]
-    '''
-
+    env.plot()
     plt.show()
-    print(env.p0)

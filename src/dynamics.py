@@ -5,6 +5,47 @@ import numpy as np
 
 class Dynamics(object):
 
+    def __init__(self, length):
+
+        # car length [m]
+        self.l = float(length)
+
+        # state and control dimensions
+        self.sdim = 3
+        self.udim = 1
+
+    def eom_state(self, state, control):
+
+        # extract state
+        x, y, theta = state
+
+        # extract control
+        u = control
+
+        # return state transition
+        return np.array([
+            np.cos(theta),
+            np.sin(theta),
+            -np.tan(np.pi*u/2)/self.l
+        ], float)
+
+    def eom_jac(self, state, control):
+
+        # extract state
+        x, y, theta = state
+
+        # extract control
+        u = control
+
+        # return state transition Jacobian
+        return np.array([
+            [0, 0, -np.sin(theta)],
+            [0, 0,  np.cos(theta)],
+            [0, 0,              0]
+        ], float)
+
+class Dynamics_2(object):
+
     def __init__(self, length, alpha=0):
 
         # car length

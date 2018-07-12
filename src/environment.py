@@ -4,7 +4,7 @@
 import numpy as np, matplotlib.pyplot as plt
 from scipy.interpolate import CubicSpline
 from obstacle import Obstacle
-from scipy.spatial import Voronoi
+from scipy.spatial import Voronoi, voronoi_plot_2d
 
 class Environment(object):
 
@@ -60,7 +60,7 @@ class Environment(object):
             y = np.random.uniform(yl, yu)
 
             # diameter bounds
-            dlb, dub = self.d*2, self.d*5
+            dlb, dub = self.d*2, self.d*6
 
             # proposed obstacle
             pob = Obstacle(x, y, dlb, dub, 8)
@@ -96,12 +96,16 @@ class Environment(object):
             if pts.ndim == 1:
                 if ob.point_inside(pts):
                     return False
+                elif pts[0] < 0 or pts[0] > self.lx or pts[1] < 0 or pts[1] > self.ly:
+                    return False
                 else:
                     continue
 
             # vector points
             elif pts.ndim == 2:
                 if ob.lines_intersect(pts):
+                    return False
+                elif any(pts[0,:] < 0) or any(pts[0,:] > self.lx) or any(pts[1,:] < 0) or any(pts[1,:] > self.ly):
                     return False
                 else:
                     continue
@@ -111,20 +115,20 @@ class Environment(object):
     def gen_voronoi(self):
 
         verts = np.vstack(([ob.verts for ob in self.obs]))
-        voronoi = Voronoi(verts).vertices
-        gv = list()
-        for vp in voronoi:
-            x, y = vp
-            if x >= 0 and x <= self.lx and y >= 0 and y <= self.ly and self.safe(vp):
-                gv.append(vp)
-        self.voronoi = np.array(gv)
+        self.voronoi = Voronoi(verts)
 
 
 
-    def plot(self, ax=None):
+    def plot(self, ax=None, voronoi=False):
 
         if ax is None:
             fig, ax = plt.subplots(1)
+
+        # plot voronoi graph
+        if voronoi:
+            voronoi_plot_2d(self.voronoi, ax=ax)
+            ax.set_xlim(0, self.lx)
+            ax.set_ylim(0, self.ly)
 
         # plot walls
         wall = np.array([
@@ -145,8 +149,9 @@ class Environment(object):
         for obs in self.obs:
             obs.plot(ax)
 
-        # plot voronoi graph
-        ax.plot(self.voronoi[:,0], self.voronoi[:,1], 'k.')
+        ax.set_xlabel('x [m]')
+        ax.set_ylabel('y [m]')
+
 
 
 
@@ -161,7 +166,7 @@ if __name__ == '__main__':
     #env.gen_obs()
 
     fig, ax = plt.subplots(1)
-    env.plot(ax)
+    env.plot(ax, voronoi=True)
 
 
     # random points

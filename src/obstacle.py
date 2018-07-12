@@ -2,6 +2,7 @@
 # sprague@kth.se
 
 import numpy as np, matplotlib.pyplot as plt
+from scipy.spatial import ConvexHull
 
 class Obstacle(object):
 

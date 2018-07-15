@@ -34,7 +34,7 @@ class Dynamics(object):
             np.tan(np.pi*u/2)/self.l
         ], float)
 
-    def eom_jac(self, state, control):
+    def eom_state_jac(self, state, control):
 
         # extract state
         x, y, theta = state

@@ -17,6 +17,10 @@ class Mission(object):
         # environment
         self._environment = env
 
+        # origin and target
+        self.origin = self._environment.p0
+        self.target = self._environment.pf
+
         # reset mission
         self.reset()
 
@@ -26,41 +30,92 @@ class Mission(object):
         self.states = np.empty((0, self._dynamics.sdim), float)
         self.times = np.empty((1, 0), float)
 
-        # safety
-        self.safe = True
-
-        # reset state
-        self.state = np.hstack((self._environment.p0, np.zeros(self._dynamics.sdim - 2)))
-
         # reset integrator
-        self.integrator = ODE(self._eom, 0, self.state, 10000, jac=self._jac)
+        self._integrator = ODE(self._eom, 0, np.hstack((self.origin, np.zeros(self._dynamics.sdim - 2))), 100, jac=self._jac)
 
     def _eom(self, t, state):
-        return self._dynamics.eom_state(state, self.control)
+        return self._dynamics.eom_state(state, self._control)
 
     def _jac(self, t, state):
-        return self._dynamics.eom_state_jac(state, self.control)
+        return self._dynamics.eom_state_jac(state, self._control)
 
     def step(self, control):
 
         # set control
-        self.control = control
+        self._control = control
 
         # integrate one step
-        self.integrator.step()
+        self._integrator.step()
 
         # extract state and time
-        self.state, self.time = self.integrator.y, self.integrator.t
+        state, time = self._integrator.y, self._integrator.t
 
         # check safety
-        if self._environment.safe(self.state[:2]):
-            self.safe = True
+        safe = self._environment.safe(state[:2])
+
+        # check completion
+        eps = np.linalg.norm(state[:2] - self.target)
+        if eps < 1e-4:
+            done = True
         else:
-            self.safe = False
+            done = False
 
         # record state and time
-        self.states = np.vstack((self.states, self.state))
-        self.times = np.append(self.times, self.time)
+        self.states = np.vstack((self.states, state))
+        self.times = np.append(self.times, time)
 
         # return next state and time
-        return self.state, self.time, self.safe
+        return state, time, safe, done
+
+    def simulate(self, controls, times=None):
+
+        # reset state and time record
+        self.reset()
+
+        # conditions
+        safe, done = True, False
+
+        # if given control function
+        if callable(controls):
+
+            while safe and not done:
+
+                # get control
+                u = controls(self._integrator.t, self._integrator.y)
+
+                # step one time step
+                state, time, safe, done = self.step(u)
+                print(state)
+
+        elif times is not None and len(controls) == len(times):
+
+            pass
+
+    def plot(self, ax=None):
+
+        if ax is None:
+            pass
+
+
+
+if __name__ == '__main__':
+
+    # instantiate mission
+    mis = Mission()
+
+    # define random controller
+    def controller(time, state):
+        u =  np.random.uniform(-0.1,0.2)
+        return u
+
+    # simulate with that controller
+    mis.simulate(controller)
+
+    # plot
+    import matplotlib.pyplot as plt
+    fig, ax = plt.subplots(1)
+    ax.plot(mis.states[:,0], mis.states[:,1], 'k-')
+    mis._environment.plot(ax)
+    plt.show()
+
+    mis.reset(None)

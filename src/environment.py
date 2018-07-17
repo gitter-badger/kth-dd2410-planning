@@ -126,8 +126,8 @@ class Environment(object):
             else:
                 self.obs[i].plot(ax=ax)
 
-        ax.set_xlabel('x [m]')
-        ax.set_ylabel('y [m]')
+        ax.set_xlabel(r'$x \: [m]$')
+        ax.set_ylabel(r'$y \: [m]$')
         ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.15), ncol=4, fancybox=True)
 
         try:

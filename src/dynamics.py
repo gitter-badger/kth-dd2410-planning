@@ -19,6 +19,9 @@ class Dynamics(object):
         self.sdim = 3
         self.udim = 1
 
+        # state symbols
+        self.syms = [r'$x \: [m]$', r'$y \: [m]$', r'$\theta \: [rad]$']
+
     def eom_state(self, state, control):
 
         # extract state

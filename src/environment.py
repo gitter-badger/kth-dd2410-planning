@@ -3,14 +3,24 @@
 
 import numpy as np, matplotlib.pyplot as plt
 from obstacle import Obstacle
+import util
 
 class Environment(object):
 
-    def __init__(self, lx, ly, d):
+    def __init__(self, lx, ly, d, n):
 
-        # farm dimensions
+        # area dimensions
         self.lx = float(lx)
         self.ly = float(ly)
+
+        # borders
+        self.perim = np.array([
+            [0, 0],
+            [self.lx, 0],
+            [self.lx, self.ly],
+            [0, self.ly],
+            [0, 0]
+        ], float)
 
         # safe radius
         self.d = float(d)
@@ -21,8 +31,11 @@ class Environment(object):
             y1 = (y0 + self.ly)/2
         elif y0 > self.ly/2:
             y1 = y0/2
-        self.p0 = np.array([0, y0], float)
+        self.p0 = np.array([0.1, y0], float)
         self.pf = np.array([self.lx, y1] ,float)
+
+        # number of obstacles
+        self.nobs = n
 
         # generate obstacles
         self.gen_obs()
@@ -40,7 +53,7 @@ class Environment(object):
         self.obs = list()
 
         # unsucessfull tries
-        j = 0
+        i, j = 0, 0
         # first obstacle
         first = True
         # diameter bounds
@@ -48,7 +61,7 @@ class Environment(object):
         # number of vertices per obstacle
         n = 10
 
-        while j < 10000:
+        while i < self.nobs  and j < 10000:
 
             # random position
             x = np.random.uniform(xl, xu)
@@ -61,6 +74,7 @@ class Environment(object):
             if first:
                 self.obs.append(pob)
                 first = False
+                i += 1
 
             else:
 
@@ -72,32 +86,45 @@ class Environment(object):
                     j += 1
                 else:
                     self.obs.append(pob)
+                    i += 1
                     j = 0
 
     def safe(self, pts):
 
-        # check if insider obstacle
-        for ob in self.obs:
+        # if given points
+        if pts.shape == (1, 2):
+            print('yrsfd')
 
-            # point
-            if pts.ndim == 1:
+            # check if within boundaries
+            if pts[0] < 0 or pts[0] > self.lx or pts[1] < 0 or pts[1] > self.ly:
+                return False
+
+            # check if inside obstacles
+            for ob in self.obs:
+
                 if ob.point_inside(pts):
                     return False
-                elif pts[0] < 0 or pts[0] > self.lx or pts[1] < 0 or pts[1] > self.ly:
-                    return False
-                else:
-                    continue
 
-            # vector points
-            elif pts.ndim == 2:
-                if ob.lines_intersect(pts):
+        # if given segment
+        if pts.shape == (2, 2):
+
+            # check if intersecting boundaries
+            for i in range(4):
+
+                # boundary line
+                perim = self.perim[i:i+2, :]
+
+                if util.intersection(pts, perim):
                     return False
-                elif any(pts[:,0] < 0) or any(pts[:,0] > self.lx) or any(pts[:,1] < 0) or any(pts[:,1] > self.ly):
+
+            # check if it intersect obstacle edges
+            for ob in self.obs:
+
+                if ob.line_intersect(pts):
                     return False
-                else:
-                    continue
 
         return True
+
 
     def plot(self, ax=None, voronoi=False):
 
@@ -138,5 +165,20 @@ class Environment(object):
 if __name__ == '__main__':
 
     env = Environment(50, 30, 1)
-    env.plot()
+
+    fig, ax = env.plot()
+
+    for i in range(40):
+
+        line = np.hstack((
+            np.random.uniform(-5, 55, (2, 1)),
+            np.random.uniform(-5, 35, (2, 1))
+        ))
+
+        res = env.safe(line)
+
+        if res is not True:
+            ax.plot(*res, 'kx')
+            ax.plot(line[:,0], line[:,1],'k-')
+
     plt.show()

@@ -28,13 +28,13 @@ class Dynamics(object):
         x, y, theta = state
 
         # extract control
-        u = control
+        phi = control
 
         # return state transition
         return np.array([
             np.cos(theta),
             np.sin(theta),
-            np.tan(np.pi*u/2)/self.l
+            np.tan(phi)/self.l
         ], float)
 
     def eom_state_jac(self, state, control):

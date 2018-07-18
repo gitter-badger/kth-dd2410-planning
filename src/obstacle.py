@@ -2,7 +2,7 @@
 # sprague@kth.se
 
 import numpy as np, matplotlib.pyplot as plt
-from scipy.spatial import ConvexHull
+import util
 
 class Obstacle(object):
 
@@ -58,45 +58,18 @@ class Obstacle(object):
 
         return inside
 
-    def line_intersect(self, p):
+    def line_intersect(self, seg0):
 
-        # line in question
-        a = p[0, :]
-        b = p[1, :]
-
-        # first check whether verticies are inside
-        if any([self.point_inside(a), self.point_inside(b)]):
-            return True
-
-        # vector
-        ab = b - a
-
-        # check each edge
+        # for each edge
         for i in range(self.n - 1):
 
-            # vertex line
-            c = self.verts[i, :]
-            d = self.verts[i+1, :]
+            # edge
+            seg1 = self.verts[i:i+2, :]
 
-            # vectors
-            cd = d - c
-            bc = c - b
-            bd = d - b
-            da = a - d
-            db = b - d
-
-            # proper intersction
-            if np.cross(ab, bc)*np.cross(ab, bd) < 0 and np.cross(cd, da)*np.cross(cd, db) < 0:
+            # if there is an intersection
+            if util.intersection(seg0, seg1):
                 return True
-        return False
 
-    def lines_intersect(self, p):
-
-        for i in range(len(p) - 1):
-
-            line = p[i:i+2, :]
-            if self.line_intersect(line):
-                return True
         return False
 
     def plot(self, ax=None, label=False):
@@ -109,7 +82,10 @@ class Obstacle(object):
         else:
             ax.fill(self.verts[:,0], self.verts[:,1], 'gray', alpha=0.6, ec='k')
 
-        return ax
+        try:
+            return fig, ax
+        except:
+            pass
 
 
 if __name__ == '__main__':
@@ -118,15 +94,13 @@ if __name__ == '__main__':
     obs = Obstacle(0, 0, 10, 20, 20)
 
     # plot obstacle
-    ax = obs.plot()
+    fig, ax = obs.plot()
 
-    # line
-    for i in range(4000):
-        line = np.random.uniform(-10, 10, (2,2))
-        if obs.lines_intersect(line):
-            ax.plot(line[:,0], line[:,1], 'r.-', alpha=0.1)
-        else:
-            ax.plot(line[:,0], line[:,1], 'g.-')
+    # random lines
+    for i in range(10):
 
-    ax.set_aspect('equal')
+        line = np.array([[-10, np.random.uniform(-10, 10)], [10, 0]])
+        ax.plot(line[:,0], line[:,1], 'k-')
+        ax.plot(*obs.line_intersect(line), 'k.')
+
     plt.show()

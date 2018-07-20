@@ -26,7 +26,9 @@ class Mission(object):
         # origin and target
         self.origin = self._environment.p0
         self.target = self._environment.pf
-        self.control = 0
+
+        # arbitrary control for integrator initialisation
+        self._control = 0
 
         # numerical integrator
         self._integrator = ODE(
@@ -35,8 +37,7 @@ class Mission(object):
             np.hstack((self.origin, np.zeros(self._dynamics.sdim - 2))),
             500,
             jac = self._jac,
-            atol=1e-10,
-            rtol=1e-5,
+            atol=1e-8,
             vectorized=True,
             max_step=0.1
         )
@@ -46,111 +47,129 @@ class Mission(object):
 
     def set(self, state, time):
 
-        # set mission state and time
+        # set state and time for user
         self.state = np.array(state, float)
         self.time  = float(time)
 
         # set numerical integrator state and time
-        self._integrator.y = np.array(state, float)
-        self._integrator.t = float(time)
+        self._integrator.y = np.array(self.state, float)
+        self._integrator.t = float(self.time)
 
     def reset(self):
 
-        # current conditions
-        self.state   = np.hstack((self.origin, np.zeros(self._dynamics.sdim - 2)))
-        self.time    = 0
-        self.control = 0
-        self.safe    = True
-        self.done    = False
+        # initial state and time
+        s0 = np.hstack((self.origin, np.zeros(self._dynamics.sdim - 2)))
+        t0 = 0
 
-        # reset integrator
-        self.set(self.state, self.time)
+        # set to nominal conditions
+        self.set(s0, t0)
 
         # reset records
-        self.states   = np.array([self.state], float)
-        self.times    = np.array([self.time], float)
+        self.states   = np.array([s0], float)
+        self.times    = np.array([t0], float)
         self.controls = np.empty((1, 0), float)
 
+    def record(self, state, time, control):
+
+        # record state, time, and control
+        self.states   = np.vstack((self.states, state))
+        self.times    = np.append(self.times, time)
+        self.controls = np.append(self.controls, control)
+
     def _eom(self, t, state):
-        return self._dynamics.eom_state(state, self.control)
+        return self._dynamics.eom_state(state, self._control)
 
     def _jac(self, t, state):
         return self._dynamics.eom_state_jac(state, self._control)
 
-    def issafe(self, position):
-        return self._environment.safe(position)
+    def safe(self, p0, p1=None):
 
-    def isdone(self, position):
-        delta = np.linalg.norm(position - self.target)
+        # if only given one position
+        if p1 is None:
+            return self._environment.safe(p0)
+        # if given a line
+        else:
+            return self._environment.safe(np.vstack((p0, p1)))
+
+    def done(self, p):
+        delta = np.linalg.norm(p - self.target)
         if delta < 0.1:
             return True
         else:
             return False
 
-    def step(self, control, verbose=False):
+    def step(self, control, inplace=False, verbose=False):
 
-        # set control
-        self.control = control
+        # set the control
+        self._control = control
 
-        # old state
+        # store the starting state and time
+        s0, t0 = self._integrator.y, self._integrator.t
 
-        # old position
-        p0 = self._integrator.y[:2]
-
-        # integrate one step
+        # take one integration step
         self._integrator.step()
 
-        # extract state and time
-        state, time = self._integrator.y, self._integrator.t
+        # extract new state and time
+        s1, t1 = self._integrator.y, self._integrator.t
 
-        if verbose:
-            print('State', state, 'Time', time)
-
-        # new position
-        p1 = state[:2]
-
-        # check safety of point
-        if not self.issafe(p1):
-            safe = False
+        # do not set internal state
+        if not inplace:
+            self.set(s0, t0)
         else:
-            # check safety of segment
-            safe = self.issafe(np.vstack((p0, p1)))
+            pass
 
-        # check completion
-        done = self.isdone(p1)
+        # print the new state if desired
+        if verbose:
+            print('State', s1, 'Time', t1)
 
-        # return next state and time
-        return state, time, safe, done
+        # check safety of new position
+        if not self.safe(s1[:2]):
+            safe = False
+        # if new position is safe, check for intersection
+        elif not self.safe(s0[:2], s1[:2]):
+            safe = False
+        # if its all good in the hood
+        else:
+            safe = True
+
+        # check if new position is near target
+        done = self.done(s1[:2])
+
+        # return the resulting conditions
+        return s1, t1, safe, done
 
     def simulate(self, control, time=None, obs=True, verbose=False):
 
         # reset state and time record
         self.reset()
 
+        # set conditions
+        safe, done = True, False
+
         # if given control function
         if callable(control):
 
-            while (self.safe and not self.done and self._integrator.status is 'running' and obs) or \
-                  (self._integrator.status is 'running' and not obs and not self.done):
+            while (safe and not done and self._integrator.status is 'running' and obs) or \
+                  (not done and self._integrator.status is 'running' and not obs):
 
-                # get control
-                self.control = control(self._integrator.t, self._integrator.y)
+                # compute control
+                u = control(self._integrator.t, self._integrator.y)
 
                 # step one time step
-                self.state, self.time, self.safe, self.done = self.step(self.control)
+                s, t, safe, done = self.step(u, inplace=True)
 
                 # if overshoot
-                if self._integrator.t > self._integrator.t_bound:
-                    self.time = self._integrator.t_bound
-                    self.state = self._integrator.dense_output()(self.time)
+                if t > self._integrator.t_bound:
+                    t = self._integrator.t_bound
+                    s = self._integrator.dense_output()(t)
+                    self.set(s, t)
 
                 if verbose:
-                    print('State', self.state, 'Time', self.time)
+                    print('State', s, 'Time', t)
 
                 # record
-                self.states   = np.vstack((self.states, self.state))
-                self.times    = np.append(self.times, self.time)
-                self.controls = np.append(self.controls, self.control)
+                self.record(s, t, u)
+
 
         # if given control sequence
         elif time is not None and len(control) + 1 == len(time):
@@ -158,50 +177,51 @@ class Mission(object):
             for i in range(len(control)):
 
                 # set control
-                self.control = control[i]
+                u = control[i]
+                # seed time
+                t = time[i]
 
-                # set boundary time
-                self._integrator.t_bound = time[i+1]
-
-                while (self.safe and not self.done and self._integrator.status is 'running' and obs) or \
-                      (self._integrator.status is 'running' and not obs and not self.done):
+                while (safe and not done and self._integrator.status is 'running' and obs and t < time[i+1]) or \
+                      (not done and self._integrator.status is 'running' and not obs and t < time[i+1]):
 
                     # integrate one step in time
-                    self.state, self.time, self.safe, self.done = self.step(self.control)
+                    s, t, safe, done = self.step(u, inplace=True)
 
                     # if overshoot
-                    if self._integrator.t > self._integrator.t_bound:
-                        self.time = self._integrator.t_bound
-                        self.state = self._integrator.dense_output()(self.time)
-                        self._integrator.t = self.time
-                        self._integrator.y = self.state
+                    if t > time[i+1]:
+                        t = time[i+1]
+                        s = self._integrator.dense_output()(t)
+                        self.set(s, t)
 
                     if verbose:
-                        print('State', self.state, 'Time', self.time)
+                        print('State', s, 'Time', t)
 
-                    self.states   = np.vstack((self.states, self.state))
-                    self.times    = np.append(self.times, self.time)
-                    self.controls = np.append(self.controls, self.control)
+                    # record
+                    self.record(s, t, u)
 
-                if ((not self.safe or self.done) and obs) or (self.done and not obs):
+                # if unsafe or done within trajectory, break it
+                if ((not safe and done) and obs) or (done and not obs):
                     break
-                elif self._integrator.status is 'finished':
-                    self._integrator.status = 'running'
 
+                # otherwise keep looping
+                else:
+                    pass
 
-        if self.safe and self.done:
+        # if succesful
+        if safe and done:
             return 1
+
+        # if unsuccesful
         else:
 
             # origin distance from target
             D = np.linalg.norm(self.target - self.origin)
 
             # car distance to target
-            d = np.linalg.norm(self.target - self.state[:2])
+            d = np.linalg.norm(self.target - s[:2])
 
             # return percent distance acheived
             return 1 - d/D
-
 
     def plot_traj(self, ax=None):
 
@@ -246,20 +266,18 @@ if __name__ == '__main__':
     # instantiate mission
     mis = Mission()
 
-    # define random controller
-    def controller(time, state):
-        u =  np.random.uniform(-0.1, 0.2)
-        return u
+    # random control function
+    cf = lambda t, s: np.random.uniform(-0.1, 0.2)
 
-    # define random control sequence
-    u = np.random.uniform(-0.1, 0.1, 100)
+    # random control sequence
+    u = np.random.uniform(-0.1, 0.2, 20)
     t = np.linspace(0, 100, len(u) + 1)
 
-    # simulate with that controller
-    print(mis.simulate(u, t, obs=True))
-    #print(mis.simulate(controller, obs=True, verbose=True))
+    # simulate with control function
+    print(mis.simulate(cf, verbose=True))
+    #print(mis.simulate(u, t, verbose=True, obs=False))
 
-    # plot
-    mis.plot_traj()
-    mis.plot_records()
+    # visualise
+    fig, ax = mis.plot_traj()
+    fig, ax = mis.plot_records()
     plt.show()

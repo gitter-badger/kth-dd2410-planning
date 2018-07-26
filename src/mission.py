@@ -6,6 +6,7 @@ from scipy.integrate import RK45 as ODE
 from dynamics import Dynamics
 from environment import Environment
 import matplotlib.pyplot as plt
+np.set_printoptions(suppress=True, precision=4)
 
 
 class Mission(object):
@@ -35,7 +36,7 @@ class Mission(object):
             self._eom,
             0,
             np.hstack((self.origin, np.zeros(self._dynamics.sdim - 2))),
-            500,
+            1000,
             jac = self._jac,
             atol=1e-8,
             vectorized=True,
@@ -69,7 +70,7 @@ class Mission(object):
         self.times    = np.array([t0], float)
         self.controls = np.empty((1, 0), float)
 
-    def record(self, state, time, control):
+    def record(self, state, control, time):
 
         # record state, time, and control
         self.states   = np.vstack((self.states, state))
@@ -98,45 +99,120 @@ class Mission(object):
         else:
             return False
 
-    def step(self, control, inplace=False, verbose=False):
+    def step(self, control, Dt=None, inplace=False, verbose=False, record=False):
 
-        # set the control
-        self._control = control
-
-        # store the starting state and time
+        # store the starting state, time, and direction
         s0, t0 = self._integrator.y, self._integrator.t
 
-        # take one integration step
-        self._integrator.step()
+        # if given a desire boundary time
+        if isinstance(Dt, float) or isinstance(Dt, int):
 
-        # extract new state and time
-        s1, t1 = self._integrator.y, self._integrator.t
+            # final time
+            tf = t0 + Dt
 
-        # do not set internal state
-        if not inplace:
+            # create records
+            states   = np.array([s0], float)
+            times    = np.array([t0], float)
+            controls = np.empty((1,0), float)
+
+            # integrate until desired time is reached
+            safe, done = True, False
+
+            # if integrating forward
+            while safe and not done:
+
+                # if control is a function
+                if callable(control):
+                    self._control = control(self._integrator.t, self._integrator.y)
+                else:
+                    self._control = control
+
+                # integration step
+                self._integrator.step()
+
+                # extract new state and time
+                s1, t1 = self._integrator.y, self._integrator.t
+
+                # adjust if over boundry
+                if self._integrator.direction == 1 and t1 >= tf:
+                    t1 = tf
+                    s1 = self._integrator.dense_output()(t1)
+                    final = True
+                else:
+                    final = False
+
+                # check safety of new position
+                if not self.safe(s1[:2]):
+                    safe = False
+                # check for intersection
+                elif not self.safe(s0[:2], s1[:2]):
+                    safe = False
+                # if we good
+                else:
+                    safe = True
+
+                # check if near target
+                done = self.done(s1[:2])
+
+                # print if desired
+                if verbose:
+                    print('State: {0:<30} Time: {1:<10.3f} Control: {2:<10.3f} Safe: {3:<10} Done: {4:<10}'.format(str(s1), t1, self._control, str(safe), str(done)))
+
+                # records
+                states   = np.vstack((states, s1))
+                times    = np.append(times, t1)
+                controls = np.append(controls, self._control)
+
+                # break if final
+                if final:
+                    break
+                else:
+                    continue
+
+            s, u, t = states, controls, times
+
+        # if just wanting one step
+        elif Dt is None:
+
+            # if given control function
+            if callable(control):
+                self._control = control(self._integrator.t, self._integrator.y)
+            else:
+                self._control = control
+
+            # take one integration step
+            self._integrator.step()
+
+            # extract new state and time
+            s1, t1 = self._integrator.y, self._integrator.t
+
+            # check safety of new position
+            if not self.safe(s1[:2]):
+                safe = False
+            # check for intersection
+            elif not self.safe(s0[:2], s1[:2]):
+                safe = False
+            # if we good
+            else:
+                safe = True
+
+            # check if near target
+            done = self.done(s1[:2])
+
+            # print if desired
+            if verbose:
+                print('State: {0:<30} Time: {1:<10.3f} Control: {2:<10.3f} Safe: {3:<10} Done: {4:<10}'.format(str(s1), t1, self._control, str(safe), str(done)))
+
+            s, t, u = s1, t1, self._control
+
+        if inplace:
+            self.set(s1, t1)
+        elif not inplace:
             self.set(s0, t0)
-        else:
-            pass
+        if record:
+            self.record(s, u, t)
 
-        # print the new state if desired
-        if verbose:
-            print('State', s1, 'Time', t1)
-
-        # check safety of new position
-        if not self.safe(s1[:2]):
-            safe = False
-        # if new position is safe, check for intersection
-        elif not self.safe(s0[:2], s1[:2]):
-            safe = False
-        # if its all good in the hood
-        else:
-            safe = True
-
-        # check if new position is near target
-        done = self.done(s1[:2])
-
-        # return the resulting conditions
-        return s1, t1, safe, done
+        return s, u, t, safe, done
 
     def simulate(self, control, time=None, obs=True, verbose=False):
 
@@ -232,7 +308,12 @@ class Mission(object):
         ax.plot(self.states[:,0], self.states[:,1], 'k-')
 
         # plot environment
-        self._environment.plot(ax)
+        try:
+            if ax.env == True:
+                pass
+        except:
+            self._environment.plot(ax)
+            ax.env = True
 
         try:
             return fig, ax
@@ -250,7 +331,8 @@ class Mission(object):
             ax[i].set_ylabel(self._dynamics.syms[i])
 
         # plot controls
-        ax[-1].plot(self.times[:-1], self.controls, 'k-')
+        l = min(len(self.times), len(self.controls))
+        ax[-1].plot(self.times[:l], self.controls[:l], 'k-')
         ax[-1].set_ylabel(r'$\phi \: [rad]$')
         ax[-1].set_xlabel(r'$t \: [s]$')
 
@@ -258,8 +340,6 @@ class Mission(object):
             return fig, ax
         except:
             pass
-
-
 
 if __name__ == '__main__':
 
@@ -269,15 +349,4 @@ if __name__ == '__main__':
     # random control function
     cf = lambda t, s: np.random.uniform(-0.1, 0.2)
 
-    # random control sequence
-    u = np.random.uniform(-0.1, 0.2, 20)
-    t = np.linspace(0, 100, len(u) + 1)
-
-    # simulate with control function
-    print(mis.simulate(cf, verbose=True))
-    #print(mis.simulate(u, t, verbose=True, obs=False))
-
-    # visualise
-    fig, ax = mis.plot_traj()
-    fig, ax = mis.plot_records()
-    plt.show()
+    mis.step(cf, -10, verbose=True)

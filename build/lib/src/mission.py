@@ -3,8 +3,8 @@
 
 import numpy as np
 from scipy.integrate import RK45 as ODE
-from .dynamics import Dynamics
-from .environment import Environment
+from dynamics import Dynamics
+from environment import Environment
 import matplotlib.pyplot as plt
 np.set_printoptions(suppress=True, precision=4)
 

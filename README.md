@@ -40,7 +40,7 @@ The `Mission` API, as described above, allows one to flexibly test planning meth
 First of all, we need to import the module for this assignment, after which we can instantiate the `Mission` object.
 ```python
 # import necessary module
-from rplplanning2018 import mission
+from rplplanning2018 import Mission
 # instantiate mission object
 mis = Mission()
 ```
@@ -61,7 +61,7 @@ u = np.random.uniform(-0.1, 0.1)
 uf = lambda t, s: np.random.uniform(-0.1, 0.1)
 ```
 
-With either of these we can simulate one step in time, with the time-step size determined by an adaptive numerical integrator, or to a user specified duration, as shown
+With either of these we can simulate one step in time, with the time-step size determined by an adaptive numerical integrator:
 ```python
 >>> mis.step(u)
 (array([ 0.1704, 23.6773, -0.0011]),
@@ -128,7 +128,7 @@ One can keep track of the car's trajectory either trough the `step` or `record` 
 ```
 ![](doc/random_traj.svg)
 
-It should be noted here that the step stops once either `safe` is `False` or `done` is `True`.
+It should be noted here that `step` stops once either `safe` is `False` or `done` is `True`.
 
 ## The task
 
@@ -153,5 +153,4 @@ def main():
 ```
 
 ### Validation
-A **succesful** function will return a squence of states, time, and controls which together are dynamically feasible, collision free, and arrive to the target.
-.
+A **succesful** function will return a `Mission` object in which `Mission.states`, `Mission.times`, `Mission.controls` describe a trajectory which is both collision free and dynamical feasible.

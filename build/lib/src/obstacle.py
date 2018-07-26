@@ -2,7 +2,7 @@
 # sprague@kth.se
 
 import numpy as np, matplotlib.pyplot as plt
-from . import util
+import util
 
 class Obstacle(object):
 

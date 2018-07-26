@@ -1,9 +1,9 @@
 # Christopher Iliffe Sprague
 # sprague@kth.se
 
-from .mission import Mission
+from mission import Mission
 import numpy as np, matplotlib.pyplot as plt
-from .environment import Environment
+from environment import Environment
 
 def ex1():
 

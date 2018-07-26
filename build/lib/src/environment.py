@@ -2,8 +2,8 @@
 # christopher.iliffe.sprague@gmail.com
 
 import numpy as np, matplotlib.pyplot as plt
-from .obstacle import Obstacle
-from . import util
+from obstacle import Obstacle
+import util
 
 class Environment(object):
 

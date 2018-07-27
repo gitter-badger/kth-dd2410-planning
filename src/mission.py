@@ -26,6 +26,10 @@ class Mission(object):
         self.origin = self._environment.p0
         self.target = self._environment.pf
 
+        # boundaries
+        self.xbound = np.array([0, self._environment.lx])
+        self.ybound = np.array([0, self._environment.ly])
+
         # arbitrary control for integrator initialisation
         self._control = 0
 
@@ -83,14 +87,18 @@ class Mission(object):
 
     def safe(self, p0, p1=None):
 
+        p0 = np.array(p0, float)
+
         # if only given one position
         if p1 is None:
             return self._environment.safe(p0)
         # if given a line
         else:
+            p1 = np.array(p1)
             return self._environment.safe(np.vstack((p0, p1)))
 
     def done(self, p):
+        p = np.array(p, float)
         delta = np.linalg.norm(p - self.target)
         if delta < 0.1:
             return True

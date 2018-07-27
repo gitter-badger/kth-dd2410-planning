@@ -17,6 +17,8 @@ Attribute           | Type                     | Description |
 | ----------------- | ------------------------ | ---------------- |
 |`mission.origin`   | `np.ndarray((1,2))`      | Initial position |
 |`mission.target`   | `np.ndarray((1,2))`      | Target position |
+|`mission.xbound`   |  `np.ndarray((1,2))` |  Horizontal boundaries, where`xbound[0]` is the lower bound and `xbound[1]` the upper. |
+|`mission.ybound`   |  `np.ndarray((1,2))` |  Vertical boundaries, where`ybound[0]` is the lower bound and `ybound[1]` the upper. |   |   |   |
 |`mission.state`    | `np.ndarray(shape(1,3))` | Current state, where <li> `state[0]`: horizontal position <li> `state[1]`: vertical position <li> `state[2]`: heading angle|
 |`mission.time`     | `float`                  | Current time |
 |`mission.states`   | `np.ndarray((n,3))`      | Record of `n` states, where: <li> `states[:,0]`: horizontal positions <li> `states[:,1]`: vertical positions <li>`states[:,2]`: heading angles |
@@ -34,6 +36,8 @@ Attribute           | Type                     | Description |
 | `mission.done(p)`           |  <li> `p : np.ndarray((1,2))`: position  | `True` if `p` is approximately at `mission.target` |  None |
 | `mission.step(u, Dt=None, inplace=False, verbose=False, record=False)`   | <li> `u : float or callable`: control or control function of the form `control(t, s)` <li> `Dt : float`: duration to simulate <li> `inplace : bool`: set the internal state and time <li> `verbose : bool`: if `True` print simulation information <li> `record : bool`: append `s`, `u`, and `t` to the records | If `u` is a float, tuple containing: <li> `s : np.ndarray((1,3))`: new state <li> `u : float`: control <li> `t : float`: new time <li> `safe : bool`: `True` if transition was safe, `False` otherwise <li> `done : bool`: `True` if new position is approximately at target, `False` otherwise <br><br> If `Dt` is given, tuple containing: <li> `s : np.ndarray((n,3))`: states  <li> `u : np.ndarray((1, n))`: controls  <li> `t : np.ndarray((1,n))`: times <li> `safe : bool`: `True` if transition was safe, `False` otherwise <li> `done : bool`: `True` if new position is approximately at target, `False` otherwise | <li> If `inplace` is `True` than the final state and time are set. <li> If `verbose` is `True`, the state and time are shown.|
 | `mission.simulate()`   | <li> `u : np.ndarray((1,n-1))`: sequence of controls <li> `t : np.ndarray((1,n))`: sequence of times  | Returns the terminal percent distance to the target, i.e. `1-d/D`, where `D` is the distance between the origin and target and `d` is the distance from the car to the target. |  The returned quantity signifies your success. |
+|`mission.plot_traj(ax=None)`   |  `ax : matplotlib.axes`: optional preexisting axis plot on.| If `ax` is not given, returns a tuple `(fig : matplotlib.figure, ax : matplotlib.axes)`, nothing otherwise  | Plots the environment and trajectory from the `states` record |
+|`mission.plot_records(ax=None)`| `ax : matplotlib.axes`: optional preexisting axis plot on.  | If `ax` is not given, returns a tuple `(fig : matplotlib.figure, ax : matplotlib.axes)`, nothing otherwise  | Plots timeline of the records from `states`, `times` and `controls`. |
 
 ### Implementation
 The `mission` API, as described above, allows one to flexibly test planning methods. Let's walk through how to use it.

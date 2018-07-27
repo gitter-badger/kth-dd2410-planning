@@ -92,8 +92,7 @@ class Environment(object):
     def safe(self, pts):
 
         # if given points
-        if pts.shape == (1, 2):
-            print('yrsfd')
+        if pts.ndim == 1:
 
             # check if within boundaries
             if pts[0] < 0 or pts[0] > self.lx or pts[1] < 0 or pts[1] > self.ly:

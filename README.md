@@ -10,39 +10,40 @@ Suppose that we must drive the car between particular positions, while avoiding 
 
 ## The code
 
-In this assignment we'll work with a `Mission` object, which encapsulates the dynamics and environment of this problem.
+In this assignment we'll work with a `mission` object, which encapsulates the dynamics and environment of this problem.
 
 ### Attributes
 Attribute           | Type                     | Description |
 | ----------------- | ------------------------ | ---------------- |
-|`Mission.origin`   | `np.ndarray((1,2))`      | Initial position |
-|`Mission.target`   | `np.ndarray((1,2))`      | Target position |
-|`Mission.state`    | `np.ndarray(shape(1,3))` | Current state, where <li> `state[0]`: horizontal position <li> `state[1]`: vertical position <li> `state[2]`: heading angle|
-|`Mission.time`     | `float`                  | Current time |
-|`Mission.states`   | `np.ndarray((n,3))`      | Record of `n` states, where: <li> `states[:,0]`: horizontal positions <li> `states[:,1]`: vertical positions <li>`states[:,2]`: heading angles |
-|`Mission.times`    | `np.ndarray((1,n))`      | Record of `n` times |
-|`Mission.controls` | `np.ndarray((1,n))`      | Record of `n` controls |
+|`mission.origin`   | `np.ndarray((1,2))`      | Initial position |
+|`mission.target`   | `np.ndarray((1,2))`      | Target position |
+|`mission.state`    | `np.ndarray(shape(1,3))` | Current state, where <li> `state[0]`: horizontal position <li> `state[1]`: vertical position <li> `state[2]`: heading angle|
+|`mission.time`     | `float`                  | Current time |
+|`mission.states`   | `np.ndarray((n,3))`      | Record of `n` states, where: <li> `states[:,0]`: horizontal positions <li> `states[:,1]`: vertical positions <li>`states[:,2]`: heading angles |
+|`mission.times`    | `np.ndarray((1,n))`      | Record of `n` times |
+|`mission.controls` | `np.ndarray((1,n-1))`      | Record of `n-1` controls |
 
 ### Methods
 
 | Method                      | Arguments | Returns | Notes |
 | --------------------------- | --------- | ------- | ----------- |
-| `Mission.set(s, t)`         | <li> `s : np.ndarray((1,3))`: state <li> `t : float`: time | None | Sets <li> `Mission.state` to `s` <li> `Mission.time` to `t` |
-| `Mission.reset()`           | None  | None | Resets <li>`Mission.state` <li> `Mission.time` <li> `Mission.states` <li> `Mission.times` <li> `Mission.controls` |
-| `Mission.record(s, t, u)`   |  <li> `s : np.ndarray((n,3))`: state <li> `t : float or np.ndarray((1,n))`: time <li> `u : float or np.ndarray((1,n))`: control  | None |  Appends <li> `s` to `Mission.states` <li> `t` to `Mission.times` <li> `u` to `Mission.controls` |
-| `Mission.safe(p0, p1=None)` |   <li> `p0 : np.ndarray((1,2))`: first position <li> `p1 : np.ndarray((1,2))`: second position |  <li> If only given `p0`: `True` if `p0` is within boundaries and in obstacle free space, `False` otherwise <li> If given both `p0` and `p1`: `True` if line does not intersect neither boundaries nor obstacles, `False` otherwise.|  None |
-| `Mission.done(p)`           |  <li> `p : np.ndarray((1,2))`: position  | `True` if `p` is approximately at `Mission.target` |  None |
-| `Mission.step(u, Dt=None, inplace=False, verbose=False, record=False)`   | <li> `u : float or callable`: control or control function of the form `control(t, s)` <li> `Dt : float`: duration to simulate <li> `inplace : bool`: set the internal state and time <li> `verbose : bool`: if `True` print simulation information <li> `record : bool`: append `s`, `u`, and `t` to the records | If `u` is a float, tuple containing: <li> `s : np.ndarray((1,3))`: new state <li> `u : float`: control <li> `t : float`: new time <li> `safe : bool`: `True` if transition was safe, `False` otherwise <li> `done : bool`: `True` if new position is approximately at target, `False` otherwise <br><br> If `Dt` is given, tuple containing: <li> `s : np.ndarray((n,3))`: states  <li> `u : np.ndarray((1, n))`: controls  <li> `t : np.ndarray((1,n))`: times <li> `safe : bool`: `True` if transition was safe, `False` otherwise <li> `done : bool`: `True` if new position is approximately at target, `False` otherwise | <li> If `inplace` is `True` than the final state and time are set. <li> If `verbose` is `True`, the state and time are shown.|
+| `mission.set(s, t)`         | <li> `s : np.ndarray((1,3))`: state <li> `t : float`: time | None | Sets <li> `mission.state` to `s` <li> `mission.time` to `t` |
+| `mission.reset()`           | None  | None | Resets <li>`mission.state` <li> `mission.time` <li> `mission.states` <li> `mission.times` <li> `mission.controls` |
+| `mission.record(s, t, u)`   |  <li> `s : np.ndarray((n,3))`: state <li> `t : float or np.ndarray((1,n))`: time <li> `u : float or np.ndarray((1,n))`: control  | None |  Appends <li> `s` to `mission.states` <li> `t` to `mission.times` <li> `u` to `mission.controls` |
+| `mission.safe(p0, p1=None)` |   <li> `p0 : np.ndarray((1,2))`: first position <li> `p1 : np.ndarray((1,2))`: second position |  <li> If only given `p0`: `True` if `p0` is within boundaries and in obstacle free space, `False` otherwise <li> If given both `p0` and `p1`: `True` if line does not intersect neither boundaries nor obstacles, `False` otherwise.|  None |
+| `mission.done(p)`           |  <li> `p : np.ndarray((1,2))`: position  | `True` if `p` is approximately at `mission.target` |  None |
+| `mission.step(u, Dt=None, inplace=False, verbose=False, record=False)`   | <li> `u : float or callable`: control or control function of the form `control(t, s)` <li> `Dt : float`: duration to simulate <li> `inplace : bool`: set the internal state and time <li> `verbose : bool`: if `True` print simulation information <li> `record : bool`: append `s`, `u`, and `t` to the records | If `u` is a float, tuple containing: <li> `s : np.ndarray((1,3))`: new state <li> `u : float`: control <li> `t : float`: new time <li> `safe : bool`: `True` if transition was safe, `False` otherwise <li> `done : bool`: `True` if new position is approximately at target, `False` otherwise <br><br> If `Dt` is given, tuple containing: <li> `s : np.ndarray((n,3))`: states  <li> `u : np.ndarray((1, n))`: controls  <li> `t : np.ndarray((1,n))`: times <li> `safe : bool`: `True` if transition was safe, `False` otherwise <li> `done : bool`: `True` if new position is approximately at target, `False` otherwise | <li> If `inplace` is `True` than the final state and time are set. <li> If `verbose` is `True`, the state and time are shown.|
+| `mission.simulate()`   | <li> `u : np.ndarray((1,n-1))`: sequence of controls <li> `t : np.ndarray((1,n))`: sequence of times  | Returns the terminal percent distance to the target, i.e. `1-d/D`, where `D` is the distance between the origin and target and `d` is the distance from the car to the target. |  The returned quantity signifies your success. |
 
 ### Implementation
-The `Mission` API, as described above, allows one to flexibly test planning methods. Let's walk through how to use it.
+The `mission` API, as described above, allows one to flexibly test planning methods. Let's walk through how to use it.
 
-First of all, we need to import the module for this assignment, after which we can instantiate the `Mission` object.
+First of all, we need to import the module for this assignment, after which we can instantiate the `mission` object.
 ```python
 # import necessary module
-from rplplanning2018 import Mission
+from dd2410planning import mission
 # instantiate mission object
-mis = Mission()
+mis = mission()
 ```
 
 We can plot the environment to get more of a sense of it
@@ -101,7 +102,7 @@ We can also step for a specific duration, e.g. one second
  True,
  False)
 ```
-With `Mission.step` we can use the `inplace` argument to internally set the final conditions as well
+With `mission.step` we can use the `inplace` argument to internally set the final conditions as well
 ```python
 >>> mis.state, mis.time
 (array([ 0.1   , 12.5701,  0.    ]), 0.0)
@@ -118,26 +119,28 @@ With `Mission.step` we can use the `inplace` argument to internally set the fina
 
 One can keep track of the car's trajectory either trough the `step` or `record` as such
 ```python
->>> fig, ax = mis.plot_traj()
->>> fig, ax = mis.plot_records()
+>>> fig0, ax0 = mis.plot_traj()
+>>> fig1, ax1 = mis.plot_records()
 >>> for i in range(20):
         mis.step(uf, Dt=50, record=True)
-        mis.plot_traj(ax)
+        mis.plot_traj(ax0)
+        mis.plot_records(ax1)
         mis.reset()
 >>> fig.show()
 ```
 ![](doc/random_traj.svg)
+![](doc/random_records.svg)
 
-It should be noted here that `step` stops once either `safe` is `False` or `done` is `True`.
+It should be noted here that `step` stops once either `safe` is `False` or `done` is `True` regardless of `Dt`, i.e. when an obstacle is intersected or when the target position is achieved.
 
 ## The task
 
-Using some robotic planning method, utilise the above attributes and methods of the `Mission` object to write a Python script that effectively drives the car between the origin and target.
+Using some robotic planning method, utilise the above attributes and methods of the `mission` object to write a Python script that effectively drives the car between the origin and target.
 
-Create a script like function that returns the `Mission` object with its records `Mission.states`, `Mission.times`, and `Mission.controls` fully populated. Your function should look something like this:
+Create a script like function that returns the `mission` object with its records `mission.states`, `mission.times`, and `mission.controls` fully populated. Your function should look something like this:
 
 ```python
-import Mission, numpy as np
+from dd2410planning import mission
 def main():
   # instantiate mission
   mis = Mission()
@@ -153,4 +156,28 @@ def main():
 ```
 
 ### Validation
-A **succesful** function will return a `Mission` object in which `Mission.states`, `Mission.times`, `Mission.controls` describe a trajectory which is both collision free and dynamical feasible.
+A **succesful** function will return a `mission` object in which `mission.states`, `mission.times`, `mission.controls` describe a trajectory which is both collision free and dynamical feasible.
+
+One can check their success by calling `mission.simulate` the recorded control and time records, as such
+```python
+>>> mis.step(uf, Dt=500, record=True)
+>>> mis.simulate(mis.controls, mis.times)
+0.29766102200637323
+>>> fig, ax = mis.plot_traj()
+>>> fig.show()
+```
+
+![](doc/simulated.svg)
+
+We can see here that we *safely* travelled about 30% of the way to the target.
+
+
+
+# Installation
+In order to use this library, you'll need the following libraries:
+- `python`
+- `matplotlib`
+- `numpy`
+- `scipy`
+
+To install this library, you must first obtain the source code from [https://github.com/cisprague/kth-dd2410-planning.git](https://github.com/cisprague/kth-dd2410-planning.git), then install it.

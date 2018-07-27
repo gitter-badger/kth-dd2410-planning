@@ -4,12 +4,12 @@
 from distutils.core import setup
 
 setup(
-    name='rplplanning2018',
+    name='kth-dd2410-planning',
     version='0.1.0',
     author='Christopher Iliffe Sprague',
     author_email='sprague@kth.se',
-    package_dir={'rplplanning2018' : 'src'},
-    packages=['rplplanning2018'],
+    package_dir={'dd2410planning' : 'src'},
+    packages=['dd2410planning'],
     url='https://github.com/cisprague/robotics-assignment-2018',
-    description='Code for the planning assignment.'
+    description='Code for the DD2410 planning assignment at KTH.'
 )

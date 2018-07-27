@@ -1,13 +1,11 @@
 # Christopher Iliffe Sprague
 # sprague@kth.se
 
-import numpy as np
+import numpy as np, matplotlib.pyplot as plt
 from scipy.integrate import RK45 as ODE
 from .dynamics import Dynamics
 from .environment import Environment
-import matplotlib.pyplot as plt
 np.set_printoptions(suppress=True, precision=4)
-
 
 class Mission(object):
 
@@ -111,8 +109,8 @@ class Mission(object):
             tf = t0 + Dt
 
             # create records
-            states   = np.array([s0], float)
-            times    = np.array([t0], float)
+            states   = np.empty((0,3), float)
+            times    = np.empty((1,0), float)
             controls = np.empty((1,0), float)
 
             # integrate until desired time is reached
@@ -214,74 +212,18 @@ class Mission(object):
 
         return s, u, t, safe, done
 
-    def simulate(self, control, time=None, obs=True, verbose=False):
+    def simulate(self, controls, times, verbose=False):
 
         # reset state and time record
         self.reset()
 
-        # set conditions
-        safe, done = True, False
+        for i in range(len(controls)):
 
-        # if given control function
-        if callable(control):
+            # integrate
+            s, u, t, safe, done = self.step(controls[i], Dt=times[i+1]-self.time, inplace=True, verbose=verbose, record=True)
 
-            while (safe and not done and self._integrator.status is 'running' and obs) or \
-                  (not done and self._integrator.status is 'running' and not obs):
-
-                # compute control
-                u = control(self._integrator.t, self._integrator.y)
-
-                # step one time step
-                s, t, safe, done = self.step(u, inplace=True)
-
-                # if overshoot
-                if t > self._integrator.t_bound:
-                    t = self._integrator.t_bound
-                    s = self._integrator.dense_output()(t)
-                    self.set(s, t)
-
-                if verbose:
-                    print('State', s, 'Time', t)
-
-                # record
-                self.record(s, t, u)
-
-
-        # if given control sequence
-        elif time is not None and len(control) + 1 == len(time):
-
-            for i in range(len(control)):
-
-                # set control
-                u = control[i]
-                # seed time
-                t = time[i]
-
-                while (safe and not done and self._integrator.status is 'running' and obs and t < time[i+1]) or \
-                      (not done and self._integrator.status is 'running' and not obs and t < time[i+1]):
-
-                    # integrate one step in time
-                    s, t, safe, done = self.step(u, inplace=True)
-
-                    # if overshoot
-                    if t > time[i+1]:
-                        t = time[i+1]
-                        s = self._integrator.dense_output()(t)
-                        self.set(s, t)
-
-                    if verbose:
-                        print('State', s, 'Time', t)
-
-                    # record
-                    self.record(s, t, u)
-
-                # if unsafe or done within trajectory, break it
-                if ((not safe and done) and obs) or (done and not obs):
-                    break
-
-                # otherwise keep looping
-                else:
-                    pass
+            if not safe or done:
+                break
 
         # if succesful
         if safe and done:
@@ -294,7 +236,7 @@ class Mission(object):
             D = np.linalg.norm(self.target - self.origin)
 
             # car distance to target
-            d = np.linalg.norm(self.target - s[:2])
+            d = np.linalg.norm(self.target - s[-1,:2])
 
             # return percent distance acheived
             return 1 - d/D
@@ -331,10 +273,12 @@ class Mission(object):
             ax[i].set_ylabel(self._dynamics.syms[i])
 
         # plot controls
-        l = min(len(self.times), len(self.controls))
-        ax[-1].plot(self.times[:l], self.controls[:l], 'k-')
-        ax[-1].set_ylabel(r'$\phi \: [rad]$')
-        ax[-1].set_xlabel(r'$t \: [s]$')
+        try:
+            ax[-1].plot(self.times[:-1], self.controls, 'k-')
+            ax[-1].set_ylabel(r'$\phi \: [rad]$')
+            ax[-1].set_xlabel(r'$t \: [s]$')
+        except:
+            pass
 
         try:
             return fig, ax
@@ -344,9 +288,12 @@ class Mission(object):
 if __name__ == '__main__':
 
     # instantiate mission
-    mis = Mission()
+    mis = mission()
 
-    # random control function
-    cf = lambda t, s: np.random.uniform(-0.1, 0.2)
+    # control function
+    uf = lambda t, s: np.random.uniform(-0.3, 0.3)
 
-    mis.step(cf, -10, verbose=True)
+    # step for 5 seconds
+    states, controls, times, safe, done = mis.step(uf)
+
+    print(states)

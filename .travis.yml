@@ -1,8 +1,29 @@
-# Christopher Iliffe Sprague
-# sprague@kth.se
-
 language: python
+
 python:
-  - 3.6
-install: python setup.py install
-script: jupyter nbconvert --ExecutePreprocessor.timeout=-1 --to notebook --execute notebooks/tutorial.ipynb
+- 3.6
+
+install:
+  - pip install .
+  - wget https://github.com/hakimel/reveal.js/archive/master.zip
+  - unzip master.zip
+  - mv reveal.js-master reveal.js
+
+script:
+  - jupyter nbconvert --ExecutePreprocessor.timeout=-1 --to slides --reveal-prefix=reveal.js
+
+after_success: |
+  if [ -n "$GITHUB_API_KEY" ]; then
+  git checkout --orphan gh-pages
+  git rm -rf --cached .
+  mv nb.slides.html index.html
+  git add -f --ignore-errors index.html img reveal.js
+  git -c user.name='travis' -c user.email='travis' commit -m init
+  git push -f -q https://$GITHUB_USER:$GITHUB_API_KEY@github.com/$TRAVIS_REPO_SLUG gh-pages
+  fi
+
+deploy:
+  - provider: pypi
+    user: cisprague
+    password:
+      secure: yMmeNKCrCaxJt7l5CjI+VCfsosexJBzsK9tLuzVkK3rwwl9ndOd3rzdF5Rhr2lM2kI15HazT3ex7sSbzl0AJ14tcEimYWxoppbTiABG0LDyKCVMGLwDUTp7LvZ0h5EXxqL5Vrp777rKxF6/+4bbeRX0NIhrZF9904cldZu3x56xyk+/5PJTYtROx4PDM6/nvGZ5sM2FcD5Vz8CQTKR8rCNlXlY5WY5WyfWfQumSimajqBIorH8NfNIQKsAx4FSqMRHRlmkIg+TFlm5RSHJotK7jIRiclTxEI2Ii5mLy3P+A71zJLc5Lm7/aXUtub82706ZWz4+YODmXrDDRhiK7lB24IXyt69fQR3YbHl6iPi7jtSlWi7qnKSu3tTt10kkZzSm3lzQNPg5Vn25v7XQauBHIdsuKZyES8vKdNaYw1wBHhDgDpeUY9kUrpkG/iHzz+UyXfaCFwaiaVMoXbLvB2czlrDu/WspZYLa4WjnUvAeHDiPuMaBZEWKRhcHlx4n4Po8L+jH1higpOHUL1TSvV8tTnUuYm/gj5gpVaC+ofXEmnNfrIrdr9PjOvRTWZBluRGvc2rchKObHM1GURyFDAX+bwS7nELlbJPoA4ItMbu3A2lNltMMTBNuQ6hcucKVNdeQ4s2oA7Iy5tJ3spU9FjTWFbsMwdLdSOWOxkyPNqeXo=

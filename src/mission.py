@@ -39,10 +39,10 @@ class Mission(object):
             0,
             np.hstack((self.origin, np.zeros(self._dynamics.sdim - 2))),
             1000,
-            jac = self._jac,
             atol=1e-8,
             vectorized=True,
-            max_step=0.1
+            max_step=0.05,
+            #jac=self._jac
         )
 
         # reset mission

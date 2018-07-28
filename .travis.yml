@@ -5,15 +5,16 @@ python:
 
 install:
   - pip install .
-  - git submodule add https://github.com/hakimel/reveal.js.git reveal.js
 
 script:
-  - jupyter nbconvert notebooks/tutorial.ipynb --to slides --reveal-prefix=reveal.js
+  - echo "No script implemented."
 
 after_success: |
   if [ -n "$GITHUB_API_KEY" ]; then
   git checkout --orphan gh-pages
   git rm -rf --cached .
+  git submodule add https://github.com/hakimel/reveal.js.git reveal.js
+  jupyter nbconvert notebooks/tutorial.ipynb --to slides --reveal-prefix=reveal.js
   mv notebooks/tutorial.slides.html index.html
   git add -f --ignore-errors index.html reveal.js
   git -c user.name='travis' -c user.email='travis' commit -m init

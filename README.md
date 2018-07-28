@@ -1,5 +1,16 @@
 # Robotic Planning Assignment 2018
 
+- [Description](#Description)
+- [API](#API)
+  - [Attributes](#Attributes)
+  - [Methods](#Methods)
+  - [Implementation](#Implementation)
+- [Assignment](#Assignment)
+- [Validation](#Validation)
+- [Installation](#Installation)
+
+## Description
+
 In this assignment we consider a constant velocity Dubin's car model, in which the steering angle is the sole control parameter, modelled by the following system of ordinary differential equations.
 
 ![](doc/eom.svg)
@@ -8,7 +19,7 @@ Suppose that we must drive the car between particular positions, while avoiding 
 
 ![](doc/env.svg)
 
-## The code
+## API
 
 In this assignment we'll work with a `mission` object, which encapsulates the dynamics and environment of this problem.
 
@@ -137,7 +148,7 @@ One can keep track of the car's trajectory either trough the `step` or `record` 
 
 It should be noted here that `step` stops once either `safe` is `False` or `done` is `True` regardless of `Dt`, i.e. when an obstacle is intersected or when the target position is achieved.
 
-## The task
+## Assignment
 
 Using some robotic planning method, utilise the above attributes and methods of the `mission` object to write a Python script that effectively drives the car between the origin and target.
 
@@ -177,7 +188,7 @@ We can see here that we *safely* travelled about 30% of the way to the target.
 
 
 
-# Installation
+## Installation
 To install this library, you must first obtain the source code from [https://github.com/cisprague/kth-dd2410-planning](https://github.com/cisprague/kth-dd2410-planning).
 
 The following are dependencies:

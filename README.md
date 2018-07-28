@@ -3,7 +3,7 @@
 - [Installation](doc/install.md)
 - [API](doc/api.md)
 - [Assignment](doc/assignment.md)
-- [Tutorial](notebooks/tutorial.ipynb)
+- [Tutorial](https://cisprague.github.io/kth-dd2410-planning)
 
 ## Description
 

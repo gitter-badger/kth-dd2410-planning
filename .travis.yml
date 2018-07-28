@@ -17,7 +17,7 @@ after_success: |
   cd tmp
   git submodule add https://github.com/hakimel/reveal.js.git reveal.js
   jupyter nbconvert ../notebooks/tutorial.ipynb --to slides --reveal-prefix reveal.js
-  mv ../notebooks/tutorial.slides.ipynb index.html
+  mv ../notebooks/tutorial.slides.html index.html
   git add -f --ignore-errors index.html reveal.js
   git -c user.name='travis' -c user.email='travis' commit -m init
   git push -f -q https://$GITHUB_USER:$GITHUB_API_KEY@github.com/$TRAVIS_REPO_SLUG gh-pages

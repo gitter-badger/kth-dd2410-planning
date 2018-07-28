@@ -12,5 +12,5 @@ setup(
     packages=['dd2410planning'],
     url='https://github.com/cisprague/kth-dd2410-planning',
     description='Code for the DD2410 planning assignment at KTH.',
-    install_requires=['numpy', 'matplotlib', 'scipy']
+    install_requires=['numpy', 'matplotlib', 'scipy', 'jupyter']
 )

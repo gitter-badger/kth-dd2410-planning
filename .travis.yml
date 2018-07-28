@@ -3,4 +3,4 @@
 
 language: python
 install: python setup.py install
-script:
+script: jupyter nbconvert --to notebook --execute notebooks/tutorial.ipynb 

@@ -1,2 +1,5 @@
+# Christopher Iliffe Sprague
+# sprague@kth.se
+
 language: python
 install: python setup.py install

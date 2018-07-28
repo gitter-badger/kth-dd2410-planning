@@ -15,3 +15,4 @@ Please refer to the following resources:
 - [Installation](doc/install.md)
 - [API](doc/api.md)
 - [Assignment](doc/assignment.md)
+- [Tutorial](notebooks/tutorial.ipynb)

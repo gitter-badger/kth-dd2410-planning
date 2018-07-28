@@ -1,14 +1,5 @@
 # Robotic Planning Assignment 2018
 
-- [Description](#Description)
-- [API](#API)
-  - [Attributes](#Attributes)
-  - [Methods](#Methods)
-  - [Implementation](#Implementation)
-- [Assignment](#Assignment)
-- [Validation](#Validation)
-- [Installation](#Installation)
-
 ## Description
 
 In this assignment we consider a constant velocity Dubin's car model, in which the steering angle is the sole control parameter, modelled by the following system of ordinary differential equations.

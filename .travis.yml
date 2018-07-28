@@ -2,5 +2,7 @@
 # sprague@kth.se
 
 language: python
+python:
+  - 3.6
 install: python setup.py install
-script: jupyter nbconvert --to notebook --execute notebooks/tutorial.ipynb 
+script: jupyter nbconvert --to notebook --execute notebooks/tutorial.ipynb

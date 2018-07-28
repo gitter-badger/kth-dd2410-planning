@@ -184,4 +184,10 @@ In order to use this library, you'll need the following libraries:
 - `numpy`
 - `scipy`
 
-To install this library, you must first obtain the source code from [https://github.com/cisprague/kth-dd2410-planning.git](https://github.com/cisprague/kth-dd2410-planning.git), then install it.
+To install this library, you must first obtain the source code from [https://github.com/cisprague/kth-dd2410-planning.git](https://github.com/cisprague/kth-dd2410-planning.git).
+
+From within the repository, you can install it as follows
+
+```bash
+sudo python kth-dd2410-planning/setup.py install
+```

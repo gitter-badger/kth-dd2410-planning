@@ -32,6 +32,6 @@ One can check their success by calling `mission.simulate` the recorded control a
 >>> fig.show()
 ```
 
-![](simulated.svg)
+![](img/simulated.svg)
 
 We can see here that we *safely* travelled about 30% of the way to the target.

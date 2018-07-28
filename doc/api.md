@@ -122,7 +122,7 @@ One can keep track of the car's trajectory either trough the `step` or `record` 
         mis.reset()
 >>> fig.show()
 ```
-![](random_traj.svg)
-![](random_records.svg)
+![](img/random_traj.svg)
+![](img/random_records.svg)
 
 It should be noted here that `step` stops once either `safe` is `False` or `done` is `True` regardless of `Dt`, i.e. when an obstacle is intersected or when the target position is achieved.

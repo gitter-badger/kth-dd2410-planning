@@ -13,4 +13,4 @@ In this assignment we'll consider a constant velocity Dubin's car model, in whic
 
 Our task to **safely** drive the car from its initial position to a target position without colliding with any obstacles or venturing out of bounds. Consider the diagramme below.
 
-![](doc/env.svg)
+![](doc/img/env.svg)

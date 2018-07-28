@@ -45,7 +45,7 @@ We can plot the environment to get more of a sense of it
 >>> fig, ax = mis.plot_traj()
 >>> fig.show()
 ```
-![](doc/env.svg)
+![](env.svg)
 
 For demonstration, let's consider a constant control and a control function
 ```python
@@ -122,7 +122,7 @@ One can keep track of the car's trajectory either trough the `step` or `record` 
         mis.reset()
 >>> fig.show()
 ```
-![](doc/random_traj.svg)
-![](doc/random_records.svg)
+![](random_traj.svg)
+![](random_records.svg)
 
 It should be noted here that `step` stops once either `safe` is `False` or `done` is `True` regardless of `Dt`, i.e. when an obstacle is intersected or when the target position is achieved.

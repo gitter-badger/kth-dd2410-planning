@@ -1,5 +1,7 @@
 # Robotic Planning Assignment 2018
 
+[![Join the chat at https://gitter.im/kth-dd2410-planning/Lobby](https://badges.gitter.im/kth-dd2410-planning/Lobby.svg)](https://gitter.im/kth-dd2410-planning/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 - [Installation](doc/install.md)
 - [API](doc/api.md)
 - [Assignment](doc/assignment.md)
